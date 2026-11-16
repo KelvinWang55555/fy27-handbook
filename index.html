@@ -82,6 +82,17 @@ h2.sec{font-size:17px;margin:0 0 4px}
 .flow i{font-style:normal;flex:1;font-size:14px}
 .flow s{text-decoration:none;font-size:11.5px;color:var(--ink-3)}
 .quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.flow a.wrap{flex-wrap:wrap}
+.flow a.wrap s{flex-basis:100%;padding-left:44px;line-height:1.6;font-size:12px}
+.qa{display:flex;flex-direction:column;gap:0}
+.qaitem{display:grid;grid-template-columns:130px 1fr 60px;gap:10px;align-items:start;padding:11px 4px;
+  border-bottom:1px dashed var(--line);cursor:pointer}
+.qaitem:last-child{border-bottom:0}
+.qaitem:hover{background:var(--petrol-l);border-radius:6px}
+.qaitem b{font-size:13px;color:var(--petrol-d);font-weight:600}
+.qaitem span{font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.qaitem em{font-style:normal;font-size:11px;color:var(--ink-3);text-align:right;white-space:nowrap}
+@media(max-width:560px){.qaitem{grid-template-columns:1fr;gap:4px}.qaitem em{text-align:left}}
 
 .rhits{font-size:13px;color:var(--ink-3);margin:0 0 12px}
 .hit{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;cursor:pointer;
@@ -253,15 +264,22 @@ function renderOverview(m){
   m.innerHTML =
   '<div class="stats">' +
     '<div class="stat"><b>' + (st.pages||87) + '</b><span>手册页数</span></div>' +
-    '<div class="stat"><b>' + (st.links||'') + '</b><span>内部资料链接</span></div>' +
+    '<div class="stat"><b>' + (st.unique||'') + '</b><span>不重复资料链接</span></div>' +
     '<div class="stat"><b>' + (st.products||'') + '</b><span>覆盖产品线</span></div>' +
     '<div class="stat"><b>' + (st.processes||'') + '</b><span>政策与流程</span></div>' +
   '</div>' +
   '<div class="card" style="margin-bottom:14px">' +
-    '<h2 class="sec">一句话定位</h2>' +
+    '<h2 class="sec">手册结构</h2>' +
     '<p class="sub" style="font-size:13.5px;line-height:1.75;color:#41525e">' + esc(d.blurb||'') + '</p>' +
-    '<div class="quick">' + (d.quick||[]).map(function(x){ return '<span class="chip" data-q="' + esc(x.q) + '">' + esc(x.label) + '</span>'; }).join('') + '</div>' +
   '</div>' +
+  '<div class="card" style="margin-bottom:14px"><h2 class="sec">想查什么，直接去哪页</h2>' +
+    '<div class="flow">' + (d.howto||[]).map(function(x){
+      return '<a class="wrap" data-goto="' + x.p + '"><em>P' + x.p + '</em><i>' + esc(x.k) + '</i><s>' + esc(x.v) + '</s></a>';
+    }).join('') + '</div></div>' +
+  '<div class="card" style="margin-bottom:14px"><h2 class="sec">常见问题速答</h2>' +
+    '<div class="qa">' + (d.quick||[]).map(function(x){
+      return '<div class="qaitem" data-goto="' + x.p + '"><b>' + esc(x.label) + '</b><span>' + esc(x.ans||'') + '</span><em>P' + x.p + ' ›</em></div>';
+    }).join('') + '</div></div>' +
   '<div class="grid2">' +
     '<div class="card"><h2 class="sec">按章节直达</h2><div class="sub" style="margin-bottom:6px">点击进入对应页</div><div class="flow">' +
       (d.toc||[]).map(function(x){ return '<a data-goto="' + x.p + '"><em>P' + x.p + '</em><i>' + esc(x.t) + '</i><s>' + esc(x.s) + '</s></a>'; }).join('') +
@@ -382,19 +400,59 @@ function bestLabel(l){
   });
   return cand[0].slice(0,60);
 }
+function pickLabel(labels){
+  if (!labels.length) return '';
+  var score = {};
+  labels.forEach(function(s){ score[s] = (score[s] || 0) + 1; });
+  var cands = Object.keys(score);
+  cands.sort(function(a, b){
+    var sa = (/\d/.test(a) ? 3 : 0) + (a.length > 6 ? 1 : 0) + (/(资料|链接)$/.test(a) ? -4 : 0);
+    var sb = (/\d/.test(b) ? 3 : 0) + (b.length > 6 ? 1 : 0) + (/(资料|链接)$/.test(b) ? -4 : 0);
+    if (sa !== sb) return sb - sa;
+    if (score[a] !== score[b]) return score[b] - score[a];
+    return a.split(' ').length - b.split(' ').length || a.length - b.length;
+  });
+  return cands[0].slice(0, 60);
+}
 function allLinks(){
   if (S._links) return S._links;
-  var rows = [], seen = {};
+  var map = {}, order = [];
   S.pages.forEach(function(pg){
-    (pg.k||[]).forEach(function(l){
-      var key = pg.p + '|' + l.u;
-      if (seen[key]) return;
-      seen[key] = 1;
-      var lab = bestLabel(l) || (((pg.g||[])[0] || pg.s) + ' 资料');
-      rows.push({pg:pg, l:{u:l.u, label:lab}});
+    (pg.k || []).forEach(function(l){
+      var k = l.u;
+      if (!map[k]) { map[k] = {u:l.u, pg:pg, pages:[], labels:[]}; order.push(k); }
+      var r = map[k];
+      if (r.pages.indexOf(pg.p) < 0) r.pages.push(pg.p);
+      var lab = bestLabel(l);
+      if (lab) r.labels.push(lab);
     });
   });
-  S._links = rows; return rows;
+  var rows = order.map(function(k){
+    var r = map[k];
+    return {u:r.u, pg:r.pg, pages:r.pages,
+      label: pickLabel(r.labels) || (((r.pg.g || [])[0] || r.pg.s) + ' 资料')};
+  });
+  // 同名不同链接：补页码后缀，避免看起来是重复项
+  var cnt = {};
+  rows.forEach(function(r){ cnt[r.label] = (cnt[r.label] || 0) + 1; });
+  rows.forEach(function(r){
+    if (cnt[r.label] > 1) r.label = r.label + ' · P' + r.pages.join('/');
+  });
+  // 仍同名（同页多份不同文件）：加序号区分
+  var cnt2 = {}, seenIdx = {};
+  rows.forEach(function(r){ cnt2[r.label] = (cnt2[r.label] || 0) + 1; });
+  rows.forEach(function(r){
+    if (cnt2[r.label] > 1) {
+      seenIdx[r.label] = (seenIdx[r.label] || 0) + 1;
+      r.label = r.label + ' ' + seenIdx[r.label] + '/' + cnt2[r.label];
+    }
+  });
+  S._links = rows;
+  return S._links;
+}
+function inSectionPages(r){
+  if (S.section === 'all') return true;
+  return r.pages.some(function(p){ return inSection({p:p}); });
 }
 function linkTagOf(l){
   var u = l.u || '';
@@ -410,15 +468,16 @@ function renderLinks(m, limit){
   var tags = ['all','Sales Library','SIA','1847','其他平台','邮件'];
   var q = norm(S.linkQ);
   var rows = allLinks();
-  if (S.linkTag !== 'all') rows = rows.filter(function(r){ return linkTagOf(r.l) === S.linkTag; });
-  if (S.section !== 'all') rows = rows.filter(function(r){ return inSection(r.pg); });
+  if (S.section !== 'all') rows = rows.filter(inSectionPages);
+  if (S.linkTag !== 'all') rows = rows.filter(function(r){ return linkTagOf({u:r.u}) === S.linkTag; });
   if (q) rows = rows.filter(function(r){
-    return norm(r.l.label+' '+r.pg.s+' '+r.pg.t+' '+(r.pg.g||[]).join(' ')).indexOf(q) >= 0;
+    var secs = r.pages.map(function(p){ var x = S.pages.find(function(y){ return y.p === p; }); return x ? (x.s + ' ' + x.t + ' ' + (x.g||[]).join(' ')) : ''; }).join(' ');
+    return norm(r.label + ' P' + r.pages.join(' ') + ' ' + secs).indexOf(q) >= 0;
   });
   var shown = rows.slice(0, limit);
   m.innerHTML =
   '<div class="card" style="margin-bottom:14px"><h2 class="sec">资源链接库</h2>' +
-  '<div class="sub">手册内全部可点击链接，按平台与关键词筛选；点击直接打开，或复制链接发给同事。</div></div>' +
+  '<div class="sub">手册里 821 处链接去重后为 ' + allLinks().length + ' 条；同一文件在多页复用时只出现一次，页面列标出全部出处。点击直接打开，或复制链接发给同事。</div></div>' +
   '<div class="filters">' + SECTIONS.map(function(x){
       return '<span class="chip ' + (S.section===x[1]?'on':'') + '" data-sec="' + x[1] + '">' + x[0] + '</span>';
     }).join('') + '</div>' +
@@ -430,9 +489,9 @@ function renderLinks(m, limit){
   '<div class="tbl"><div class="row head"><span>产品线</span><span>链接</span><span>页面</span><span></span></div>' +
     shown.map(function(r){
       return '<div class="row"><span class="sub">' + esc((r.pg.g||[])[0]||r.pg.s) + '</span>' +
-        '<a class="u" href="' + esc(r.l.u) + '" target="_blank" rel="noopener">' + esc(r.l.label) + '</a>' +
-        '<span class="sub" data-goto="' + r.pg.p + '" style="cursor:pointer">P' + r.pg.p + '</span>' +
-        '<button class="copy" data-c="' + esc(r.l.u) + '">复制</button></div>';
+        '<a class="u" href="' + esc(r.u) + '" target="_blank" rel="noopener">' + esc(r.label) + '</a>' +
+        '<span class="sub" data-goto="' + r.pages[0] + '" style="cursor:pointer" title="' + r.pages.join('/') + '">P' + r.pages[0] + (r.pages.length>1?(' +' + (r.pages.length-1)):'') + '</span>' +
+        '<button class="copy" data-c="' + esc(r.u) + '">复制</button></div>';
     }).join('') + '</div>' +
   '<div class="morewrap">' + (rows.length>shown.length
     ? '<button class="btn" id="more">再显示 ' + Math.min(100, rows.length-shown.length) + ' 条（共 ' + rows.length + '）</button>'
