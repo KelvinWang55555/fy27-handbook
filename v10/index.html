@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FY27 Sales Domain Handbook · 查询工具</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{
+  --petrol:#00847a; --petrol-d:#00665e; --petrol-l:#e6f4f2;
+  --ink:#12222c; --ink-2:#41525e; --ink-3:#73828c;
+  --line:#dde4e9; --bg:#f4f6f8; --card:#ffffff;
+  --amber:#b26a00; --amber-bg:#fff4e0;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+  -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.6}
+.hide{display:none!important}
+a{color:var(--petrol-d);text-decoration:none}
+a:hover{text-decoration:underline}
+
+.gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#0f2b33,#123c3a 45%,#0d1f26);z-index:100;padding:20px}
+.gate-box{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:30px 26px 24px;
+  box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.gate-logo{font-size:12px;letter-spacing:.18em;color:var(--petrol);font-weight:700;text-transform:uppercase}
+.gate h1{font-size:21px;margin:8px 0 4px;line-height:1.35}
+.gate p{color:var(--ink-3);font-size:13px;margin:0 0 18px}
+.gate input#pw{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;outline:none}
+.gate input#pw:focus{border-color:var(--petrol)}
+.gate button{width:100%;margin-top:12px;padding:12px;border:0;border-radius:10px;background:var(--petrol);
+  color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.gate button:active{background:var(--petrol-d)}
+.gate .msg{font-size:13px;color:#c0392b;min-height:18px;margin-top:10px}
+.gate .remember{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-top:12px}
+.gate .warn{font-size:11.5px;color:var(--ink-3);margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+
+header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
+.hd{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.brand b{font-size:16px;letter-spacing:.02em}
+.brand span{font-size:11px;color:var(--ink-3);letter-spacing:.08em}
+.search{flex:1;position:relative;min-width:120px}
+.search input{width:100%;padding:9px 34px 9px 34px;border:1.5px solid var(--line);border-radius:10px;
+  background:#fbfcfd;font-size:14px;outline:none}
+.search input:focus{border-color:var(--petrol);background:#fff}
+.search .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:14px}
+.search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;
+  color:var(--ink-3);font-size:16px;cursor:pointer;padding:4px}
+nav{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{border:0;background:none;padding:9px 13px 10px;font-size:13.5px;color:var(--ink-2);cursor:pointer;
+  border-bottom:2.5px solid transparent;white-space:nowrap;font-weight:500}
+nav button.on{color:var(--petrol-d);border-color:var(--petrol);font-weight:700}
+main{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+h2.sec{font-size:17px;margin:0 0 4px}
+.sub{color:var(--ink-3);font-size:12.5px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
+  background:#fff;font-size:12.5px;color:var(--ink-2);cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--petrol);color:var(--petrol-d)}
+.chip.on{background:var(--petrol);border-color:var(--petrol);color:#fff}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--ink-2)}
+.btn:hover{border-color:var(--petrol);color:var(--petrol-d)}
+.btn:disabled{opacity:.5;cursor:default}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:5px;background:var(--petrol-l);
+  color:var(--petrol-d);margin-right:4px;white-space:nowrap}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.stat b{display:block;font-size:26px;line-height:1.2;color:var(--petrol-d)}
+.stat span{font-size:12px;color:var(--ink-3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.flow{display:flex;flex-direction:column;gap:2px}
+.flow a{display:flex;align-items:baseline;gap:10px;padding:9px 4px;border-bottom:1px dashed var(--line);color:var(--ink)}
+.flow a:last-child{border-bottom:0}
+.flow a:hover{background:var(--petrol-l);text-decoration:none;border-radius:6px}
+.flow em{font-style:normal;font-size:11px;color:var(--ink-3);width:34px;flex:none}
+.flow i{font-style:normal;flex:1;font-size:14px}
+.flow s{text-decoration:none;font-size:11.5px;color:var(--ink-3)}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.flow a.wrap{flex-wrap:wrap}
+.flow a.wrap s{flex-basis:100%;padding-left:44px;line-height:1.6;font-size:12px}
+.qa{display:flex;flex-direction:column;gap:0}
+.qaitem{display:grid;grid-template-columns:130px 1fr 60px;gap:10px;align-items:start;padding:11px 4px;
+  border-bottom:1px dashed var(--line);cursor:pointer}
+.qaitem:last-child{border-bottom:0}
+.qaitem:hover{background:var(--petrol-l);border-radius:6px}
+.qaitem b{font-size:13px;color:var(--petrol-d);font-weight:600}
+.qaitem span{font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.qaitem em{font-style:normal;font-size:11px;color:var(--ink-3);text-align:right;white-space:nowrap}
+@media(max-width:560px){.qaitem{grid-template-columns:1fr;gap:4px}.qaitem em{text-align:left}}
+
+.rhits{font-size:13px;color:var(--ink-3);margin:0 0 12px}
+.hit{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;cursor:pointer;
+  transition:border-color .12s,box-shadow .12s}
+.hit:hover{border-color:var(--petrol);box-shadow:0 3px 12px rgba(0,80,70,.07)}
+.hit-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
+.hit-h b{font-size:14.5px}
+.pill{font-size:11px;background:#eef2f6;color:var(--ink-2);padding:1px 8px;border-radius:6px}
+.snip{font-size:13px;color:var(--ink-2);line-height:1.65}
+mark{background:#ffe9a8;padding:0 1px;border-radius:2px;color:inherit}
+
+.browse{display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:start}
+.side{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;position:sticky;top:112px}
+.side h4{margin:6px 4px 8px;font-size:12px;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+.side .item{padding:6px 9px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;color:var(--ink-2)}
+.side .item:hover{background:#f1f5f7}
+.side .item.on{background:var(--petrol-l);color:var(--petrol-d);font-weight:600}
+.side .item u{text-decoration:none;font-size:11px;color:var(--ink-3)}
+.viewer{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.vbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.vbar b{font-size:14.5px}
+.vbar .sp{flex:1}
+.slidewrap{background:#0d1b22;display:flex;justify-content:center}
+.slide{width:100%;height:auto;display:block;cursor:zoom-in}
+.vfoot{padding:14px 16px}
+.vfoot .txt{font-size:13.5px;color:var(--ink-2);line-height:1.75}
+.linklist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.linkrow{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.linkrow .lab{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkrow .dot{color:var(--ink-3);font-size:11px;flex:none}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tbl{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.tbl .row{display:grid;grid-template-columns:88px 1fr 78px 60px;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);
+  align-items:center;font-size:13.5px}
+.tbl .row:last-child{border-bottom:0}
+.tbl .row.head{background:#f7f9fa;font-size:12px;color:var(--ink-3);font-weight:600}
+.tbl .row .u{color:var(--petrol-d);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+.tbl .row .copy{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:11.5px;padding:3px 8px;cursor:pointer;color:var(--ink-2)}
+.tbl .badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:9px;background:#eef3f6;color:var(--ink-3);font-size:11px}
+.tbl .sublist{background:#fafcfd;border-bottom:1px solid var(--line)}
+.tbl .srow{display:grid;grid-template-columns:88px 1fr 78px 60px;gap:10px;padding:8px 14px 8px 22px;font-size:12px;color:var(--ink-2)}
+.tbl .srow .u{color:var(--petrol-d);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl .srow .copy{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:11.5px;padding:3px 8px;cursor:pointer;color:var(--ink-2)}
+.morewrap{display:flex;justify-content:center;padding:14px}
+
+.ana h3{font-size:15.5px;margin:22px 0 8px;padding-left:10px;border-left:3px solid var(--petrol)}
+.ana p{color:var(--ink-2);font-size:14px;margin:0 0 10px}
+.ana ul{margin:0 0 14px;padding-left:20px;color:var(--ink-2);font-size:14px}
+.ana li{margin-bottom:6px;line-height:1.7}
+.ana .note{background:var(--amber-bg);border-left:3px solid var(--amber);padding:10px 14px;border-radius:8px;font-size:13.5px;color:#6b4a00}
+
+footer{max-width:1180px;margin:0 auto;padding:0 16px 30px;color:var(--ink-3);font-size:11.5px;text-align:center}
+
+.zoom{position:fixed;inset:0;background:rgba(6,15,20,.94);z-index:60;overflow:auto;padding:20px;display:flex;align-items:flex-start;justify-content:center}
+.zoom img{max-width:none;width:auto;height:auto;border-radius:6px}
+.zoom .x{position:fixed;right:16px;top:14px;background:#fff;border:0;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}
+
+@media(max-width:860px){
+  .browse{grid-template-columns:1fr}
+  .side{position:static;order:2}
+  .grid2{grid-template-columns:1fr}
+  .hd{flex-wrap:wrap;gap:8px}
+  .brand span{display:none}
+  .tbl .row.head{display:none}
+  .tbl .row{grid-template-columns:1fr 52px;gap:8px;font-size:12px}
+  .tbl .row .sub{display:none}
+  .tbl .row .u{grid-column:1;grid-row:1;white-space:normal;word-break:break-all;line-height:1.5}
+  .tbl .row .copy{grid-column:2;grid-row:1}
+  main{padding:12px 10px 50px}
+}
+/* ---- v10: 资料矩阵 ---- */
+.mtxwrap{overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--line);border-radius:10px;background:#fff}
+.mtx{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%}
+.mtx th,.mtx td{border-bottom:1px solid var(--line);border-right:1px solid #eef2f4;padding:6px 8px;white-space:nowrap}
+.mtx thead th{position:sticky;top:0;background:#f7f9fa;z-index:3;font-weight:600;color:var(--ink-2);text-align:left;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.mtx tbody th{position:sticky;left:0;background:#fafcfd;z-index:2;text-align:left;font-weight:600;color:var(--ink-2);max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.mtx .cell{text-align:center;cursor:pointer}
+.mtx .cell b{display:inline-block;min-width:22px;padding:2px 6px;border-radius:11px;background:#e8f3f1;color:#0b6d61;font-size:11.5px}
+.mtx .cell.none{color:#dbe3e7}
+.mtx .cell:hover{background:#f2f8f7}
+.mtk{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.mask{position:fixed;inset:0;background:rgba(9,26,34,.45);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+.mask .box{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:70vh;overflow:auto;padding:18px 18px 8px}
+.mask .box h3{margin:0 0 4px;font-size:15px}
+.mask .box .li{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #eef2f4}
+.mask .box .li a{flex:1;color:var(--petrol-d);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+.mask .box .li .copy{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:12px;padding:4px 8px;cursor:pointer}
+.favb{cursor:pointer;color:#c9d3d8;margin-right:5px}
+.favb.on{color:#e3a008}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div class="brand"><b>FY27 Sales Domain</b><span>HANDBOOK</span></div>
+    <div class="search">
+      <span class="ico">⌕</span>
+      <input id="q" type="search" placeholder="搜索：SPR / Goodwill / S200 / 组织架构 / 产品型号 …" autocomplete="off">
+      <button class="clr hide" id="qc">×</button>
+    </div>
+  </div>
+  <nav id="nav">
+    <button data-v="overview" class="on">概览</button>
+    <button data-v="browse">手册浏览</button>
+    <button data-v="matrix">资料矩阵</button>
+    <button data-v="links">资源链接</button>
+    <button data-v="analysis">分析报告</button>
+    <button data-v="help">使用说明</button>
+  </nav>
+</header>
+
+<main id="main"></main>
+<footer>FY27 Sales Domain Handbook · 仅供内部查询使用 · 请勿转发链接</footer>
+
+<script>
+const S = { data:null, kv:null, slides:null, pages:[], cur:1, view:'overview', q:'', section:'all', linkTag:'all', linkQ:'', urls:{} };
+const $ = function(s){ return document.querySelector(s); };
+const esc = function(s){ return (s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+const SECTIONS = [['全部','all'],['Who 组织与角色','who'],['What 产品与资料','what'],['How 政策与流程','how']];
+
+async function grab(url){
+  return new Uint8Array(await (await fetch(url, {cache:'no-store'})).arrayBuffer());
+}
+async function boot(){
+  S.data = await (await fetch('../data.json', {cache:'no-store'})).json();
+  S.pages = S.data.pages;
+  S.slides = null; S.urls = {};
+  render();
+}
+async function ensureSlide(p){
+  if (S.urls[p]) return S.urls[p];
+  const buf = await grab('../slides/' + String(p).padStart(2, '0') + '.jpg');
+  S.urls[p] = URL.createObjectURL(new Blob([buf], {type: 'image/jpeg'}));
+  return S.urls[p];
+}
+
+function norm(s){ return (s||'').toLowerCase(); }
+function terms(q){ return norm(q).split(/\s+/).filter(Boolean); }
+function scorePage(pg, ts){
+  let sc = 0;
+  const t = norm(pg.t), x = norm(pg.x), s = norm(pg.s + ' ' + (pg.g||[]).join(' '));
+  const k = norm((pg.k||[]).map(function(l){ return l.l+' '+l.c+' '+l.h+' '+l.r; }).join(' | '));
+  for (var i=0;i<ts.length;i++){
+    var term = ts[i], hit = false;
+    if (t.indexOf(term) >= 0) { sc += 14; hit = true; }
+    if (s.indexOf(term) >= 0) { sc += 5; hit = true; }
+    if (k.indexOf(term) >= 0) { sc += 6; hit = true; }
+    if (x.indexOf(term) >= 0) { sc += Math.min(x.split(term).length-1, 6); hit = true; }
+    if (!hit) return -1;
+  }
+  if (t === 'table of contents') sc -= 40;
+  if (pg.s === '封面' || pg.s === '封底') sc -= 30;
+  return sc;
+}
+function hl(html, ts){
+  var out = html;
+  ts.forEach(function(t){
+    var re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+    out = out.replace(re, '<mark>$1</mark>');
+  });
+  return out;
+}
+function snip(text, ts){
+  var nt = norm(text), pos = -1;
+  ts.forEach(function(t){ var i2 = nt.indexOf(t); if (i2 >= 0 && (pos < 0 || i2 < pos)) pos = i2; });
+  if (pos < 0) pos = 0;
+  var st = Math.max(0, pos - 46), en = Math.min(text.length, pos + 128);
+  return (st>0?'…':'') + hl(esc(text.slice(st,en)), ts) + (en<text.length?'…':'');
+}
+function doSearch(q){
+  var ts = terms(q);
+  if (!ts.length) return [];
+  return S.pages.map(function(pg){ return {pg:pg, sc:scorePage(pg, ts)}; })
+    .filter(function(r){ return r.sc >= 0; })
+    .sort(function(a,b){ return b.sc - a.sc || a.pg.p - b.pg.p; })
+    .slice(0, 60);
+}
+
+function render(){
+  var m = $('#main');
+  $('#qc').classList.toggle('hide', !S.q);
+  if (S.q.trim()) { renderSearch(m); return; }
+  if (S.view === 'overview') renderOverview(m);
+  else if (S.view === 'browse') renderBrowse(m);
+  else if (S.view === 'matrix') renderMatrix(m);
+  else if (S.view === 'links') renderLinks(m, 100);
+  else if (S.view === 'analysis') renderAnalysis(m);
+  else renderHelp(m);
+}
+
+function renderOverview(m){
+  var d = S.data, st = d.stats || {};
+  m.innerHTML =
+  '<div class="stats">' +
+    '<div class="stat"><b>' + (st.pages||87) + '</b><span>手册页数</span></div>' +
+    '<div class="stat"><b>' + (st.unique||'') + '</b><span>不重复资料链接</span></div>' +
+    '<div class="stat"><b>' + (st.products||'') + '</b><span>覆盖产品线</span></div>' +
+    '<div class="stat"><b>' + (st.processes||'') + '</b><span>政策与流程</span></div>' +
+  '</div>' +
+  '<div class="card" style="margin-bottom:14px">' +
+    '<h2 class="sec">手册结构</h2>' +
+    '<p class="sub" style="font-size:13.5px;line-height:1.75;color:#41525e">' + esc(d.blurb||'') + '</p>' +
+  '</div>' +
+  '<div class="card" style="margin-bottom:14px"><h2 class="sec">想查什么，直接去哪页</h2>' +
+    '<div class="flow">' + (d.howto||[]).map(function(x){
+      return '<a class="wrap" data-goto="' + x.p + '"><em>P' + x.p + '</em><i>' + esc(x.k) + '</i><s>' + esc(x.v) + '</s></a>';
+    }).join('') + '</div></div>' +
+  '<div class="card" style="margin-bottom:14px"><h2 class="sec">常见问题速答</h2>' +
+    '<div class="qa">' + (d.quick||[]).map(function(x){
+      return '<div class="qaitem" data-goto="' + x.p + '"><b>' + esc(x.label) + '</b><span>' + esc(x.ans||'') + '</span><em>P' + x.p + ' ›</em></div>';
+    }).join('') + '</div></div>' +
+  '<div class="grid2">' +
+    '<div class="card"><h2 class="sec">按章节直达</h2><div class="sub" style="margin-bottom:6px">点击进入对应页</div><div class="flow">' +
+      (d.toc||[]).map(function(x){ return '<a data-goto="' + x.p + '"><em>P' + x.p + '</em><i>' + esc(x.t) + '</i><s>' + esc(x.s) + '</s></a>'; }).join('') +
+    '</div></div>' +
+    '<div class="card"><h2 class="sec">高频场景</h2><div class="sub" style="margin-bottom:6px">找资料 / 走流程 / 找人</div><div class="flow">' +
+      (d.scenes||[]).map(function(x){ return '<a data-q="' + esc(x.q) + '"><em>›</em><i>' + esc(x.t) + '</i><s>' + esc(x.hint||'') + '</s></a>'; }).join('') +
+    '</div></div>' +
+  '</div>';
+  m.querySelectorAll('[data-goto]').forEach(function(el){
+    el.onclick = function(){ S.view='browse'; S.cur=+el.dataset.goto; setTab(); render(); };
+  });
+  m.querySelectorAll('[data-q]').forEach(function(el){
+    el.onclick = function(){ $('#q').value = el.dataset.q; S.q = el.dataset.q; render(); };
+  });
+}
+
+function inSection(pg){
+  if (S.section === 'all') return true;
+  if (S.section === 'who') return pg.p >= 3 && pg.p <= 28;
+  if (S.section === 'what') return pg.p >= 29 && pg.p <= 45;
+  return pg.p >= 46;
+}
+
+function renderBrowse(m){
+  var pg = S.pages.find(function(x){ return x.p === S.cur; }) || S.pages[0];
+  S.cur = pg.p;
+  var groups = {};
+  S.pages.forEach(function(p){ (groups[p.s] = groups[p.s] || []).push(p); });
+  var navList = Object.keys(groups).map(function(k){
+    return '<div class="item ' + (k===pg.s?'on':'') + '" data-sec="' + esc(k) + '"><span>' + esc(k) + '</span><u>' + groups[k].length + '</u></div>';
+  }).join('');
+  var links = '';
+  if (pg.k && pg.k.length){
+    links = '<div class="linklist"><div class="sub" style="margin-bottom:6px">本页链接 ' + pg.k.length + ' 条</div>' +
+      pg.k.slice(0,40).map(function(l){
+        return '<div class="linkrow"><span class="lab">' + esc(bestLabel(l) || (((pg.g||[])[0] || pg.s) + ' 资料')) + '</span>' +
+        '<a class="dot" href="' + esc(l.u) + '" target="_blank" rel="noopener">打开 ↗</a>' +
+        '<button class="copy btn" data-c="' + esc(l.u) + '" style="padding:2px 8px">复制</button></div>';
+      }).join('') +
+      (pg.k.length>40 ? '<div class="sub" style="margin-top:8px">仅显示前 40 条，完整清单见「资源链接」。</div>' : '') + '</div>';
+  }
+  m.innerHTML =
+  '<div class="browse">' +
+    '<aside class="side"><h4>章节</h4>' + navList +
+      '<h4 style="margin-top:14px">快捷跳页</h4>' +
+      '<div class="item" data-jump="1"><span>封面 / 目录</span><u>P1</u></div>' +
+      '<div class="item" data-jump="5"><span>组织架构</span><u>P5</u></div>' +
+      '<div class="item" data-jump="23"><span>角色职责</span><u>P23</u></div>' +
+      '<div class="item" data-jump="31"><span>重点产品</span><u>P31</u></div>' +
+      '<div class="item" data-jump="37"><span>资料链接</span><u>P37</u></div>' +
+      '<div class="item" data-jump="48"><span>政策流程</span><u>P48</u></div>' +
+      '<div class="item" data-jump="78"><span>TPS / TPE</span><u>P78</u></div>' +
+    '</aside>' +
+    '<section class="viewer">' +
+      '<div class="vbar"><b>' + esc(pg.t) + '</b><span class="pill">' + esc(pg.s) + '</span><span class="sp"></span>' +
+        '<button class="btn" id="prev">‹ 上一页</button><span class="sub">' + pg.p + ' / ' + S.pages.length + '</span>' +
+        '<button class="btn" id="next">下一页 ›</button></div>' +
+      '<div class="slidewrap"><img class="slide" id="slide" alt="P' + pg.p + '"></div>' +
+      '<div class="vfoot"><div class="txt">' + esc(pg.x) + '</div>' + links + '</div>' +
+    '</section>' +
+  '</div>';
+
+  var img = $('#slide');
+  img.alt = 'P' + pg.p;
+  ensureSlide(pg.p).then(function(u){
+    img.src = u;
+    if (pg.p < S.pages.length) { ensureSlide(pg.p + 1).catch(function(){}); }
+  }).catch(function(){
+    img.alt = '本页图像加载失败，请检查网络后刷新';
+  });
+  img.onclick = function(){
+    if (!img.src) return;
+    var z = document.createElement('div');
+    z.className = 'zoom';
+    z.innerHTML = '<button class="x">×</button><img src="' + img.src + '">';
+    z.onclick = function(e){ if (e.target === z || e.target.classList.contains('x')) z.remove(); };
+    document.body.appendChild(z);
+  };
+  $('#prev').onclick = function(){ S.cur = Math.max(1, S.cur-1); render(); window.scrollTo(0,0); };
+  $('#next').onclick = function(){ S.cur = Math.min(S.pages.length, S.cur+1); render(); window.scrollTo(0,0); };
+  m.querySelectorAll('[data-sec]').forEach(function(el){
+    el.onclick = function(){ S.cur = groups[el.dataset.sec][0].p; render(); };
+  });
+  m.querySelectorAll('[data-jump]').forEach(function(el){
+    el.onclick = function(){ S.cur = +el.dataset.jump; render(); };
+  });
+  m.querySelectorAll('.copy').forEach(function(b){
+    b.onclick = function(e){ e.preventDefault(); copyText(b.dataset.c, b); };
+  });
+}
+
+function copyText(txt, btn){
+  navigator.clipboard.writeText(txt).then(function(){
+    if (!btn) return;
+    var old = btn.textContent; btn.textContent = '已复制';
+    setTimeout(function(){ btn.textContent = old; }, 1200);
+  });
+}
+
+function cleanLabel(s){
+  if (!s) return '';
+  s = s.replace(/\(RC-CN/g,' ').replace(/\b(RC-CN|SH&I|MB-I|Bin|Xiao|Wang,|Wang|TS\)|SRE)\b/g,' ');
+  s = s.replace(/[·•]/g,' ').replace(/\s+/g,' ').trim();
+  var parts = s.split(' ').filter(Boolean), out = [];
+  parts.forEach(function(p){ if (out[out.length-1] !== p) out.push(p); });
+  return out.join(' ').trim();
+}
+function bestLabel(l){
+  var cand = [l.h, l.c, l.r, l.l].map(cleanLabel).filter(function(s){
+    return s && s.length >= 3 && s.length <= 48 && /[A-Za-z0-9\u4e00-\u9fa5]/.test(s)
+      && !/^Y+$/.test(s) && !/https?:|=|knowledgePool/i.test(s);
+  });
+  if (!cand.length) return '';
+  cand.sort(function(a,b){
+    var ta = a.split(' ').length, tb = b.split(' ').length;
+    if (ta !== tb) return ta - tb;
+    return a.length - b.length;
+  });
+  return cand[0].slice(0,60);
+}
+function pickLabel(labels){
+  if (!labels.length) return '';
+  var score = {};
+  labels.forEach(function(s){ score[s] = (score[s] || 0) + 1; });
+  var cands = Object.keys(score);
+  cands.sort(function(a, b){
+    var sa = (/\d/.test(a) ? 3 : 0) + (a.length > 6 ? 1 : 0) + (/(资料|链接)$/.test(a) ? -4 : 0);
+    var sb = (/\d/.test(b) ? 3 : 0) + (b.length > 6 ? 1 : 0) + (/(资料|链接)$/.test(b) ? -4 : 0);
+    if (sa !== sb) return sb - sa;
+    if (score[a] !== score[b]) return score[b] - score[a];
+    return a.split(' ').length - b.split(' ').length || a.length - b.length;
+  });
+  return cands[0].slice(0, 60);
+}
+function shortId(u){
+  var m = u.match(/knowledgeId=(\d+)/i);
+  if (m) return '资料号 ' + m[1];
+  var g = u.match(/[0-9a-f]{8}-[0-9a-f]{4}/i);
+  if (g) return '文件 ' + g[0].slice(0, 8);
+  var s = u.replace(/[?#].*$/, '').replace(/\/$/, '');
+  return s.slice(-22);
+}
+function allLinks(){
+  if (S._links) return S._links;
+  var map = {}, order = [];
+  S.pages.forEach(function(pg){
+    (pg.k || []).forEach(function(l){
+      var k = l.u;
+      if (!map[k]) { map[k] = {u:l.u, pg:pg, pages:[], labels:[]}; order.push(k); }
+      var r = map[k];
+      if (r.pages.indexOf(pg.p) < 0) r.pages.push(pg.p);
+      var lab = bestLabel(l);
+      if (lab) r.labels.push(lab);
+    });
+  });
+  var rows = order.map(function(k){
+    var r = map[k];
+    return {u:r.u, pg:r.pg, pages:r.pages,
+      label: pickLabel(r.labels) || (((r.pg.g || [])[0] || r.pg.s) + ' 资料')};
+  });
+  // 同名合并成一组：默认只占一行，需要时展开看每份文件
+  var groups = {}, out = [];
+  rows.forEach(function(r){
+    if (!groups[r.label]) { groups[r.label] = {label: r.label, pages: [], pg: r.pg, links: []}; out.push(groups[r.label]); }
+    var g = groups[r.label];
+    g.links.push({u: r.u, pages: r.pages});
+    r.pages.forEach(function(p){ if (g.pages.indexOf(p) < 0) g.pages.push(p); });
+  });
+  out.forEach(function(g){ g.pages.sort(function(a, b){ return a - b; }); g.u = g.links[0].u; });
+  S._links = out;
+  return S._links;
+}
+function inSectionPages(r){
+  if (S.section === 'all') return true;
+  return r.pages.some(function(p){ return inSection({p:p}); });
+}
+function linkTagOf(l){
+  var u = l.u || '';
+  if (u.indexOf('mailto:') === 0) return '邮件';
+  if (u.indexOf('saleslibrary') >= 0) return 'Sales Library';
+  if (u.indexOf('siaonline') >= 0) return 'SIA';
+  if (u.indexOf('1847') >= 0) return '1847';
+  if (u.indexOf('siemens.com') >= 0) return '其他平台';
+  return '其他';
+}
+function renderLinks(m, limit){
+  limit = limit || 100;
+  var tags = ['all','Sales Library','SIA','1847','其他平台','邮件'];
+  var q = norm(S.linkQ);
+  var rows = allLinks();
+  if (S.section !== 'all') rows = rows.filter(inSectionPages);
+  if (S.linkTag !== 'all') rows = rows.filter(function(r){ return linkTagOf({u:r.u}) === S.linkTag; });
+  if (S.onlyFav) rows = rows.filter(function(r){ return r.links.some(function(l){ return isFav(l.u); }); });
+  if (q) rows = rows.filter(function(r){
+    var secs = r.pages.map(function(p){ var x = S.pages.find(function(y){ return y.p === p; }); return x ? (x.s + ' ' + x.t + ' ' + (x.g||[]).join(' ')) : ''; }).join(' ');
+    return norm(r.label + ' P' + r.pages.join(' ') + ' ' + secs).indexOf(q) >= 0;
+  });
+  var shown = rows.slice(0, limit);
+  m.innerHTML =
+  '<div class="card" style="margin-bottom:14px"><h2 class="sec">资源链接库</h2>' +
+  '<div class="sub">手册里 821 处链接去重后 597 个文件，按“产品/型号 · 资料类型”归类为 ' + allLinks().length + ' 项；同一分类下有多份文件的显示为「N 份」，点「展开」看每一份。点击标题直接打开，或复制链接发给同事。</div></div>' +
+  '<div class="filters">' + SECTIONS.map(function(x){
+      return '<span class="chip ' + (S.section===x[1]?'on':'') + '" data-sec="' + x[1] + '">' + x[0] + '</span>';
+    }).join('') + '</div>' +
+  '<div class="filters">' + tags.map(function(t){
+      return '<span class="chip ' + (S.linkTag===t?'on':'') + '" data-tag="' + t + '">' + (t==='all'?'全部平台':t) + '</span>';
+    }).join('') +
+    '<span class="chip ' + (S.onlyFav?'on':'') + '" id="onlyfav">★ 只看收藏' + (favList().length?(' ' + favList().length):'') + '</span>' +
+    '<input id="lq" value="' + esc(S.linkQ) + '" placeholder="按型号 / 关键词过滤，如 S200、SITRANS、SCALANCE" style="flex:1;min-width:190px;padding:6px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;outline:none">' +
+  '</div>' +
+  '<div class="tbl"><div class="row head"><span>产品线</span><span>链接</span><span>页面</span><span></span></div>' +
+    shown.map(function(r){
+      if (r.links.length > 1) {
+        return '<div class="row"><span class="sub">' + esc((r.pg.g||[])[0]||r.pg.s) + '</span>' +
+          '<span class="u grpname" style="cursor:pointer">' + esc(r.label) +
+            ' <span class="badge">' + r.links.length + ' 份</span></span>' +
+          '<span class="sub" data-goto="' + r.pages[0] + '" style="cursor:pointer" title="' + r.pages.join('/') + '">P' + r.pages[0] + (r.pages.length>1?(' +' + (r.pages.length-1)):'') + '</span>' +
+          '<button class="copy tog">展开</button></div>' +
+          '<div class="sublist" style="display:none">' + r.links.map(function(l, i){
+            return '<div class="srow"><span class="sub">' + (i+1) + '</span>' +
+              '<a class="u" href="' + esc(l.u) + '" target="_blank" rel="noopener">第 ' + (i+1) + ' 份 · ' + esc(shortId(l.u)) + '</a>' +
+              '<span class="sub"></span><button class="copy" data-c="' + esc(l.u) + '">复制</button></div>';
+          }).join('') + '</div>';
+      }
+      return '<div class="row"><span class="sub">' + esc((r.pg.g||[])[0]||r.pg.s) + '</span>' +
+        '<span class="u"><span class="favb' + (isFav(r.u) ? ' on' : '') + '" data-fav="' + esc(r.u) + '" title="收藏">★</span>' +
+        '<a href="' + esc(r.u) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">' + esc(r.label) + '</a></span>' +
+        '<span class="sub" data-goto="' + r.pages[0] + '" style="cursor:pointer" title="' + r.pages.join('/') + '">P' + r.pages[0] + (r.pages.length>1?(' +' + (r.pages.length-1)):'') + '</span>' +
+        '<button class="copy" data-c="' + esc(r.u) + '">复制</button></div>';
+    }).join('') + '</div>' +
+  '<div class="morewrap">' + (rows.length>shown.length
+    ? '<button class="btn" id="more">再显示 ' + Math.min(100, rows.length-shown.length) + ' 条（共 ' + rows.length + '）</button>'
+    : '<span class="sub">共 ' + rows.length + ' 条</span>') + '</div>';
+
+  m.querySelectorAll('[data-sec]').forEach(function(el){
+    el.onclick = function(){ S.section = el.dataset.sec; renderLinks(m, limit); };
+  });
+  m.querySelectorAll('[data-tag]').forEach(function(el){
+    el.onclick = function(){ S.linkTag = el.dataset.tag; renderLinks(m, limit); };
+  });
+  var lq = $('#lq');
+  lq.oninput = function(){ S.linkQ = lq.value; renderLinks(m, limit); var n = $('#lq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  m.querySelectorAll('.copy').forEach(function(b){ b.onclick = function(){
+    if (b.classList.contains('tog')) {
+      var box = b.closest('.row').nextElementSibling;
+      if (box && box.classList.contains('sublist')) {
+        var on = box.style.display !== 'none';
+        box.style.display = on ? 'none' : '';
+        b.textContent = on ? '展开' : '收起';
+      }
+      return;
+    }
+    copyText(b.dataset.c, b);
+  }; });
+  m.querySelectorAll('[data-fav]').forEach(function(s){
+    s.onclick = function(e){
+      e.preventDefault(); e.stopPropagation();
+      toggleFav(s.dataset.fav);
+      s.classList.toggle('on');
+      if (S.onlyFav) renderLinks(m, limit);
+    };
+  });
+  var of = $('#onlyfav');
+  if (of) of.onclick = function(){ S.onlyFav = !S.onlyFav; renderLinks(m, limit); };
+  m.querySelectorAll('[data-goto]').forEach(function(el){
+    el.onclick = function(){ S.view='browse'; S.cur = +el.dataset.goto; setTab(); render(); };
+  });
+  var more = $('#more');
+  if (more) more.onclick = function(){ renderLinks(m, limit+100); };
+}
+
+function renderAnalysis(m){
+  var a = S.data.analysis || [];
+  m.innerHTML = '<div class="card ana"><h2 class="sec">手册分析</h2>' +
+    '<div class="sub" style="margin-bottom:4px">基于手册 87 页内容整理；结论仅供参考，执行以原始页面为准。</div>' +
+    a.map(function(sec){
+      return '<h3>' + esc(sec.h) + '</h3>' +
+        (sec.p ? '<p>' + esc(sec.p) + '</p>' : '') +
+        (sec.li ? '<ul>' + sec.li.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>' : '') +
+        (sec.note ? '<div class="note">' + esc(sec.note) + '</div>' : '');
+    }).join('') + '</div>';
+}
+
+function renderHelp(m){
+  m.innerHTML = '<div class="card ana"><h2 class="sec">使用说明</h2>' +
+  '<h3>三种最常用方式</h3><ul>' +
+  '<li><b>查具体内容</b>：顶部搜索框输入关键词（中英文均可，例如 <i>SPR 审批</i>、<i>SITRANS</i>、<i>Goodwill 额度</i>），即输即搜，点结果直达对应页。</li>' +
+  '<li><b>查资料链接</b>：进入「资源链接」，按产品线（AUT / MO / DR / HMA / DCS / PIA / CON / SV）或型号过滤，点「打开」直接跳内网平台，「复制」可取链接。</li>' +
+  '<li><b>看原版排版</b>：进入「手册浏览」，左侧按章节选，右上「上一页 / 下一页」翻页，点图片可放大查看完整版式。</li>' +
+  '</ul>' +
+  '<h3>关于安全</h3><ul>' +
+  '<li>页面本身不含任何正文，手册文字与页面图都存放在加密文件里，只有输入正确口令才会在本机浏览器中解密。</li>' +
+  '<li>口令不会发送到服务器；勾选「记住口令」后仅保存在本机浏览器。</li>' +
+  '<li>内容仅限西门子 DI 销售内部使用，请勿对外分享链接、口令或截图。</li>' +
+  '</ul>' +
+  '<h3>快捷键</h3><ul><li>手册浏览时：<b>←</b> / <b>→</b> 翻页；<b>Esc</b> 关闭放大图。</li></ul></div>';
+}
+
+function renderSearch(m){
+  var hits = doSearch(S.q), ts = terms(S.q);
+  if (!hits.length){
+    m.innerHTML = '<div class="rhits">“' + esc(S.q) + '” · 没有匹配内容</div>' +
+      '<div class="card sub">可尝试更短的关键词，例如「SPR」「Goodwill」「S200」「组织架构」。</div>';
+    return;
+  }
+  m.innerHTML = '<div class="rhits">“' + esc(S.q) + '” · 命中 ' + hits.length + ' 页</div>' +
+    hits.map(function(h){
+      return '<div class="hit" data-goto="' + h.pg.p + '">' +
+        '<div class="hit-h"><b>' + hl(esc(h.pg.t), ts) + '</b><span class="pill">P' + h.pg.p + '</span>' +
+        '<span class="pill">' + esc(h.pg.s) + '</span>' +
+        (h.pg.g||[]).map(function(g){ return '<span class="tag">' + esc(g) + '</span>'; }).join('') + '</div>' +
+        '<div class="snip">' + snip(h.pg.x, ts) + '</div></div>';
+    }).join('');
+  m.querySelectorAll('[data-goto]').forEach(function(el){
+    el.onclick = function(){
+      S.cur = +el.dataset.goto; S.view = 'browse'; S.q = ''; $('#q').value = ''; setTab(); render();
+    };
+  });
+}
+
+/* ===== v10 资料矩阵 ===== */
+var TYPEW = /新特性|功能介绍|功能\/技术介绍|样本|选型|订货数据|宣传册|宣传视频|易拉宝|一页纸|One ?Page|One-Pager|海报|Fighting|FG|培训|教程|安装\/操作指导|应用教程|案例|方案|协议|框架|合同|TBD|待定|Slides|Demo|介绍/i;
+function labelParts(lab){
+  var s = (lab || '').split(' · ');
+  if (s.length < 2) return null;
+  return [s[0].trim(), s.slice(1).join(' · ').trim()];
+}
+function matrixPages(){
+  var ps = S.pages.filter(function(p){ return (p.k || []).length && p.p >= 37 && p.p <= 45; });
+  if (!ps.length) ps = S.pages.filter(function(p){ return (p.k || []).length; });
+  return ps;
+}
+// 判断该页“资料类型”在标签的哪一侧：命中的一侧作为行
+function typeSide(pg){
+  var h1 = 0, h2 = 0;
+  (pg.k || []).forEach(function(l){
+    var p = labelParts(l.l);
+    if (!p) return;
+    if (TYPEW.test(p[0])) h1++;
+    if (TYPEW.test(p[1])) h2++;
+  });
+  return h1 >= h2 ? 0 : 1;
+}
+function renderMatrix(m){
+  var ps = matrixPages();
+  var cur = S.mpg;
+  if (!ps.some(function(p){ return p.p === cur; })) cur = ps[0].p;
+  var pg = ps.filter(function(p){ return p.p === cur; })[0];
+  var side = typeSide(pg);
+  var prods = [], types = [], cells = {}, rowCnt = {};
+  (pg.k || []).forEach(function(l){
+    var p = labelParts(l.l);
+    var fallback = ((pg.g || [])[0] || pg.s || '通用');
+    var type, prod;
+    if (p) { type = p[side]; prod = p[1 - side]; }
+    else { type = (l.l || '其他资料').trim(); prod = fallback; }
+    if (!type) type = '其他资料';
+    if (!TYPEW.test(type)) type = '其他资料';
+    if (!prod) prod = fallback;
+    if (TYPEW.test(prod)) prod = '（未分产品）';
+    if (prods.indexOf(prod) < 0) prods.push(prod);
+    if (types.indexOf(type) < 0) types.push(type);
+    rowCnt[type] = (rowCnt[type] || 0) + 1;
+    var k = prod + '\u0001' + type;
+    (cells[k] = cells[k] || []).push({u: l.u, label: l.l});
+  });
+  types.sort(function(a, b){ return rowCnt[b] - rowCnt[a] || a.localeCompare(b); });
+  var fills = 0, total = prods.length * types.length;
+  types.forEach(function(t){ prods.forEach(function(p){ if (cells[p + '\u0001' + t]) fills++; }); });
+
+  m.innerHTML =
+  '<div class="card" style="margin-bottom:12px"><h2 class="sec">资料矩阵</h2>' +
+  '<div class="sub">横轴是产品/主题，纵轴是资料类型，格子数字是该组合下的文件份数。点格子看每一份，比长列表更容易回答“某型号有哪些资料”。归类由链接标签自动解析，个别格子可能串行，判断拿不准时切到「资源链接」用列表核对。</div></div>' +
+  '<div class="mtk">' + ps.map(function(p){
+      return '<span class="chip ' + (p.p === cur ? 'on' : '') + '" data-mpg="' + p.p + '">P' + p.p + ' ' + esc((p.t || '').replace('内部资料链接 - ', '').replace('内部资料链接- ', '')) + '</span>';
+    }).join('') + '<span class="sub">' + prods.length + ' 个产品 × ' + types.length + ' 类资料，已填 ' + fills + '/' + total + ' 格</span></div>' +
+  '<div class="mtxwrap"><table class="mtx"><thead><tr><th style="left:0;z-index:4">资料类型 ＼ 产品</th>' +
+    prods.map(function(p){ return '<th title="' + esc(p) + '">' + esc(p) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    types.map(function(t){
+      return '<tr><th title="' + esc(t) + '">' + esc(t) + '</th>' + prods.map(function(p){
+        var arr = cells[p + '\u0001' + t];
+        if (!arr) return '<td class="cell none">·</td>';
+        return '<td class="cell" data-p="' + esc(p) + '" data-t="' + esc(t) + '" title="点击查看 ' + arr.length + ' 份"><b>' + arr.length + '</b></td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div>';
+
+  m.querySelectorAll('[data-mpg]').forEach(function(el){
+    el.onclick = function(){ S.mpg = +el.dataset.mpg; renderMatrix(m); };
+  });
+  m.querySelectorAll('[data-p]').forEach(function(td){
+    td.onclick = function(){
+      var p = td.dataset.p, t = td.dataset.t;
+      openCell(p, t, cells[p + '\u0001' + t] || []);
+    };
+  });
+}
+function openCell(prod, type, arr){
+  var mask = document.createElement('div');
+  mask.className = 'mask';
+  mask.innerHTML = '<div class="box"><h3>' + esc(prod) + ' · ' + esc(type) + '</h3>' +
+    '<div class="sub" style="margin-bottom:8px">共 ' + arr.length + ' 份（原表这一格只画勾，没有单独文件名，按资料号区分）</div>' +
+    arr.map(function(x, i){
+      return '<div class="li"><span class="sub">' + (i + 1) + '</span><a href="' + esc(x.u) + '" target="_blank" rel="noopener">' + esc(shortId(x.u)) + '</a>' +
+        '<button class="copy" data-c="' + esc(x.u) + '">复制</button></div>';
+    }).join('') + '<div style="padding:12px 0"><button class="btn" id="mclose">关闭</button></div></div>';
+  document.body.appendChild(mask);
+  mask.onclick = function(e){ if (e.target === mask || e.target.id === 'mclose') mask.remove(); };
+  mask.querySelectorAll('.copy').forEach(function(b){ b.onclick = function(){ copyText(b.dataset.c, b); }; });
+}
+
+/* ===== v10 收藏 ===== */
+function favList(){ try { return JSON.parse(localStorage.getItem('fy27fav10') || '[]'); } catch (e) { return []; } }
+function isFav(u){ return favList().indexOf(u) >= 0; }
+function toggleFav(u){
+  var a = favList(), i = a.indexOf(u);
+  if (i >= 0) a.splice(i, 1); else a.push(u);
+  localStorage.setItem('fy27fav10', JSON.stringify(a));
+}
+
+function setTab(){
+  document.querySelectorAll('#nav button').forEach(function(b){
+    b.classList.toggle('on', !S.q && b.dataset.v === S.view);
+  });
+}
+
+document.querySelectorAll('#nav button').forEach(function(b){
+  b.onclick = function(){
+    S.view = b.dataset.v; S.q = ''; $('#q').value = '';
+    if (S.view === 'browse' && !S.cur) S.cur = 1;
+    setTab(); render();
+  };
+});
+var tmr = null;
+$('#q').oninput = function(e){
+  S.q = e.target.value;
+  clearTimeout(tmr);
+  tmr = setTimeout(function(){ setTab(); render(); }, 180);
+};
+$('#qc').onclick = function(){ S.q = ''; $('#q').value = ''; setTab(); render(); };
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape'){ document.querySelectorAll('.zoom').forEach(function(z){ z.remove(); }); }
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (S.view !== 'browse' || S.q) return;
+  if (e.key === 'ArrowRight'){ e.preventDefault(); S.cur = Math.min(S.pages.length, S.cur+1); render(); }
+  if (e.key === 'ArrowLeft'){ e.preventDefault(); S.cur = Math.max(1, S.cur-1); render(); }
+});
+
+(function init(){
+  boot().catch(function(err){
+    $('#main').innerHTML = '<div class="card" style="padding:24px">加载失败：' + esc(err.message) +
+      '<br>请通过 HTTP 访问本页（例如 GitHub Pages 链接），直接双击本地文件会被浏览器拦截。</div>';
+  });
+})();
+</script>
+</body>
+</html>
