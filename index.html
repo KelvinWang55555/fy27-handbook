@@ -188,18 +188,10 @@ async function boot(){
   S.slides = null; S.urls = {};
   render();
 }
-async function ensureSlides(){
-  if (S.slides) return S.slides;
-  S.slides = await grab('slides.raw');
-  return S.slides;
-}
-function slideUrl(p){
+async function ensureSlide(p){
   if (S.urls[p]) return S.urls[p];
-  if (!S.slides) return '';
-  const pg = S.pages.find(function(x){ return x.p === p; });
-  const off = pg.si[0], len = pg.si[1];
-  const blob = new Blob([S.slides.slice(off, off+len)], {type:'image/jpeg'});
-  S.urls[p] = URL.createObjectURL(blob);
+  const buf = await grab('slides/' + String(p).padStart(2, '0') + '.jpg');
+  S.urls[p] = URL.createObjectURL(new Blob([buf], {type: 'image/jpeg'}));
   return S.urls[p];
 }
 
@@ -333,8 +325,12 @@ function renderBrowse(m){
   '</div>';
 
   var img = $('#slide');
-  ensureSlides().then(function(){ img.src = slideUrl(pg.p); }).catch(function(){
-    img.alt = '本页图像解密失败，请刷新后重试';
+  img.alt = 'P' + pg.p;
+  ensureSlide(pg.p).then(function(u){
+    img.src = u;
+    if (pg.p < S.pages.length) { ensureSlide(pg.p + 1).catch(function(){}); }
+  }).catch(function(){
+    img.alt = '本页图像加载失败，请检查网络后刷新';
   });
   img.onclick = function(){
     if (!img.src) return;
