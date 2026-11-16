@@ -132,6 +132,11 @@ mark{background:#ffe9a8;padding:0 1px;border-radius:2px;color:inherit}
 .tbl .row.head{background:#f7f9fa;font-size:12px;color:var(--ink-3);font-weight:600}
 .tbl .row .u{color:var(--petrol-d);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
 .tbl .row .copy{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:11.5px;padding:3px 8px;cursor:pointer;color:var(--ink-2)}
+.tbl .badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:9px;background:#eef3f6;color:var(--ink-3);font-size:11px}
+.tbl .sublist{background:#fafcfd;border-bottom:1px solid var(--line)}
+.tbl .srow{display:grid;grid-template-columns:88px 1fr 78px 60px;gap:10px;padding:8px 14px 8px 22px;font-size:12px;color:var(--ink-2)}
+.tbl .srow .u{color:var(--petrol-d);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl .srow .copy{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:11.5px;padding:3px 8px;cursor:pointer;color:var(--ink-2)}
 .morewrap{display:flex;justify-content:center;padding:14px}
 
 .ana h3{font-size:15.5px;margin:22px 0 8px;padding-left:10px;border-left:3px solid var(--petrol)}
@@ -414,6 +419,14 @@ function pickLabel(labels){
   });
   return cands[0].slice(0, 60);
 }
+function shortId(u){
+  var m = u.match(/knowledgeId=(\d+)/i);
+  if (m) return '资料号 ' + m[1];
+  var g = u.match(/[0-9a-f]{8}-[0-9a-f]{4}/i);
+  if (g) return '文件 ' + g[0].slice(0, 8);
+  var s = u.replace(/[?#].*$/, '').replace(/\/$/, '');
+  return s.slice(-22);
+}
 function allLinks(){
   if (S._links) return S._links;
   var map = {}, order = [];
@@ -432,22 +445,16 @@ function allLinks(){
     return {u:r.u, pg:r.pg, pages:r.pages,
       label: pickLabel(r.labels) || (((r.pg.g || [])[0] || r.pg.s) + ' 资料')};
   });
-  // 同名不同链接：补页码后缀，避免看起来是重复项
-  var cnt = {};
-  rows.forEach(function(r){ cnt[r.label] = (cnt[r.label] || 0) + 1; });
+  // 同名合并成一组：默认只占一行，需要时展开看每份文件
+  var groups = {}, out = [];
   rows.forEach(function(r){
-    if (cnt[r.label] > 1) r.label = r.label + ' · P' + r.pages.join('/');
+    if (!groups[r.label]) { groups[r.label] = {label: r.label, pages: [], pg: r.pg, links: []}; out.push(groups[r.label]); }
+    var g = groups[r.label];
+    g.links.push({u: r.u, pages: r.pages});
+    r.pages.forEach(function(p){ if (g.pages.indexOf(p) < 0) g.pages.push(p); });
   });
-  // 仍同名（同页多份不同文件）：加序号区分
-  var cnt2 = {}, seenIdx = {};
-  rows.forEach(function(r){ cnt2[r.label] = (cnt2[r.label] || 0) + 1; });
-  rows.forEach(function(r){
-    if (cnt2[r.label] > 1) {
-      seenIdx[r.label] = (seenIdx[r.label] || 0) + 1;
-      r.label = r.label + ' ' + seenIdx[r.label] + '/' + cnt2[r.label];
-    }
-  });
-  S._links = rows;
+  out.forEach(function(g){ g.pages.sort(function(a, b){ return a - b; }); g.u = g.links[0].u; });
+  S._links = out;
   return S._links;
 }
 function inSectionPages(r){
@@ -477,7 +484,7 @@ function renderLinks(m, limit){
   var shown = rows.slice(0, limit);
   m.innerHTML =
   '<div class="card" style="margin-bottom:14px"><h2 class="sec">资源链接库</h2>' +
-  '<div class="sub">手册里 821 处链接去重后为 ' + allLinks().length + ' 条；同一文件在多页复用时只出现一次，页面列标出全部出处。点击直接打开，或复制链接发给同事。</div></div>' +
+  '<div class="sub">手册里 821 处链接去重后 597 个文件，按“产品/型号 · 资料类型”归类为 ' + allLinks().length + ' 项；同一分类下有多份文件的显示为「N 份」，点「展开」看每一份。点击标题直接打开，或复制链接发给同事。</div></div>' +
   '<div class="filters">' + SECTIONS.map(function(x){
       return '<span class="chip ' + (S.section===x[1]?'on':'') + '" data-sec="' + x[1] + '">' + x[0] + '</span>';
     }).join('') + '</div>' +
@@ -488,6 +495,18 @@ function renderLinks(m, limit){
   '</div>' +
   '<div class="tbl"><div class="row head"><span>产品线</span><span>链接</span><span>页面</span><span></span></div>' +
     shown.map(function(r){
+      if (r.links.length > 1) {
+        return '<div class="row"><span class="sub">' + esc((r.pg.g||[])[0]||r.pg.s) + '</span>' +
+          '<span class="u grpname" style="cursor:pointer">' + esc(r.label) +
+            ' <span class="badge">' + r.links.length + ' 份</span></span>' +
+          '<span class="sub" data-goto="' + r.pages[0] + '" style="cursor:pointer" title="' + r.pages.join('/') + '">P' + r.pages[0] + (r.pages.length>1?(' +' + (r.pages.length-1)):'') + '</span>' +
+          '<button class="copy tog">展开</button></div>' +
+          '<div class="sublist" style="display:none">' + r.links.map(function(l, i){
+            return '<div class="srow"><span class="sub">' + (i+1) + '</span>' +
+              '<a class="u" href="' + esc(l.u) + '" target="_blank" rel="noopener">第 ' + (i+1) + ' 份 · ' + esc(shortId(l.u)) + '</a>' +
+              '<span class="sub"></span><button class="copy" data-c="' + esc(l.u) + '">复制</button></div>';
+          }).join('') + '</div>';
+      }
       return '<div class="row"><span class="sub">' + esc((r.pg.g||[])[0]||r.pg.s) + '</span>' +
         '<a class="u" href="' + esc(r.u) + '" target="_blank" rel="noopener">' + esc(r.label) + '</a>' +
         '<span class="sub" data-goto="' + r.pages[0] + '" style="cursor:pointer" title="' + r.pages.join('/') + '">P' + r.pages[0] + (r.pages.length>1?(' +' + (r.pages.length-1)):'') + '</span>' +
@@ -505,7 +524,18 @@ function renderLinks(m, limit){
   });
   var lq = $('#lq');
   lq.oninput = function(){ S.linkQ = lq.value; renderLinks(m, limit); var n = $('#lq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
-  m.querySelectorAll('.copy').forEach(function(b){ b.onclick = function(){ copyText(b.dataset.c, b); }; });
+  m.querySelectorAll('.copy').forEach(function(b){ b.onclick = function(){
+    if (b.classList.contains('tog')) {
+      var box = b.closest('.row').nextElementSibling;
+      if (box && box.classList.contains('sublist')) {
+        var on = box.style.display !== 'none';
+        box.style.display = on ? 'none' : '';
+        b.textContent = on ? '展开' : '收起';
+      }
+      return;
+    }
+    copyText(b.dataset.c, b);
+  }; });
   m.querySelectorAll('[data-goto]').forEach(function(el){
     el.onclick = function(){ S.view='browse'; S.cur = +el.dataset.goto; setTab(); render(); };
   });
